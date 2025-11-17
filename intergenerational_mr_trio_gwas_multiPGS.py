@@ -322,7 +322,7 @@ def offspring_genotype_origin(data, fam_idx, index2sample):
     if "GT" not in ind_format:
         raise ValueError("[ERROR] VCF ERROR: GT is not in FORMAT.") 
 
-    paternal_allele_origin = {}  # key value is the array index of child in VCF 存储每个子代父本等位基因的信息，字典的key是子代在vcf的索引
+    paternal_allele_origin = {}  # key value is the array index of child in VCF 
     for d in data:
         for c, f, m in fam_idx:  
             child = d[c].split(":") 
@@ -1389,4 +1389,5 @@ if __name__ == "__main__":
 
     elapsed_time = datetime.now() - START_TIME
     sys.stderr.write("\n** process done, %d seconds elapsed **\n" % elapsed_time.seconds)
+
 
