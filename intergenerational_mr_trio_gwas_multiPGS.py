@@ -1,6 +1,6 @@
 """
-Author: Shujia Huang
-Date: 2021-05-18 08:32:34
+Adapted from: Shujia Huang
+Date: 2025-11-7
 """
 import argparse
 import sys
@@ -15,12 +15,12 @@ from scipy import stats
 
 import os
 
-START_TIME = datetime.now() #执行代码的现在时间
+START_TIME = datetime.now()
 
 
-def get_beta_value(fname): #提取GWAS结果数据
+def get_beta_value(fname):
     beta = {}
-    with gzip.open(fname, "rt") if fname.endswith(".gz") else open(fname, "rt") as IN: #以.gz结尾就用gzip.open打开，否则用open打开
+    with gzip.open(fname, "rt") if fname.endswith(".gz") else open(fname, "rt") as IN:
         """
         snp	chr	pos	A	B	beta	se	pval	freq	REF	ALT
         rs340874	chr1	213985913	C	T	0.0174	0.0032	6.80E-08	0.5175	T	C
@@ -28,18 +28,18 @@ def get_beta_value(fname): #提取GWAS结果数据
         rs780094	chr2	27518370	C	T	0.0325	0.0032	3.30E-24	0.6044	NA	NA
         rs560887	chr2	168906638	C	T	0.0731	0.0034	4.68E-100	0.7019	T	C
         """
-        for line in IN: #逐行遍历
-            #if line.startswith("snp") or line.startswith("SNP"):#以SNP或snp开头说明该行为header，跳过该行
+        for line in IN: 
+            #if line.startswith("snp") or line.startswith("SNP"):
             if line.startswith("rsID") or line.startswith("#"):
                 continue
 
-            col = line.strip().split() #去除首尾空格并按照空格分割
+            col = line.strip().split() 
 
-            if len(col) < 8: #如果列数小于8，说明数据不完整，跳过改行
+            if len(col) < 8: 
                 continue
 
-            #col[1] = col[1] if col[1].startswith("chr") else "chr" + col[1] #第二列染色体用“chr”+数字表示
-            #pos = col[1] + ":" + col[2] #pos格式为chr1：position
+            #col[1] = col[1] if col[1].startswith("chr") else "chr" + col[1] 
+            #pos = col[1] + ":" + col[2] 
             if len(col) == 9:
                 col[7] = col[7] if col[7].startswith("chr") else "chr" + col[7]
                 pos = col[7] + ":" + col[8]
@@ -50,26 +50,19 @@ def get_beta_value(fname): #提取GWAS结果数据
             # [Effect allele, non-Effect allele, GWAS beta value]
             beta[pos] = [col[3].upper(), col[4].upper(), float(col[5])] #{'chr1:123':['C','T',0.0174]}
 
-    return beta #返回字典
+    return beta 
 
 
 def get_beta_value_multi(dir_path):
-    """
-    从一个目录读取多个GWAS文件，每个文件包含一个表型的GWAS结果。
-    返回 traits_beta_values: { trait_name: { pos: [a1, a2, beta] } }
-
-    GWAS文件支持.gz或txt，要求有以下列（列名可含 rsID/chr/pos/A/B/beta/...）：
-    rsID chr pos A B beta ...
-    """
     traits_beta_values = {}
 
     for fname in os.listdir(dir_path):
         # OmicsPred_hm_GRCh38 olink somascan nightingale metabolon ukb_eur ukb_multi UKB_PPP
         if not (fname.endswith(".txt") or fname.endswith(".gz")):
         #if not (fname.endswith("_GRCh38.txt") or fname.endswith(".gz")):
-            continue  # 跳过非GWAS文件
+            continue  
 
-        trait_name = os.path.splitext(fname)[0]  # 文件名去掉后缀作为表型名
+        trait_name = os.path.splitext(fname)[0]  
         beta_dict = {}
 
         full_path = os.path.join(dir_path, fname)
@@ -84,7 +77,6 @@ def get_beta_value_multi(dir_path):
                 # OmicsPred_hm_GRCh38 olink somascan nightingale metabolon ukb_eur ukb_multi
                 #if len(col) < 8:
                 #    continue
-                # 判断染色体列位置
                 #if len(col) == 9:
                 #    col[7] = col[7] if col[7].startswith("chr") else "chr" + col[7]
                 #    pos = col[7] + ":" + col[8]
@@ -97,7 +89,6 @@ def get_beta_value_multi(dir_path):
                 # ADHD BD EA OCD NDC PTSD smoking_alcohol TS
                 if len(col) < 6:
                     continue
-                # 判断染色体列位置
                 col[1] = col[1] if col[1].startswith("chr") else "chr" + col[1]
                 pos = col[1] + ":" + col[2]
                 beta_dict[pos] = [col[3].upper(), col[4].upper(), float(col[5])]
@@ -105,7 +96,6 @@ def get_beta_value_multi(dir_path):
                 # AN
                 #if len(col) < 6:
                 #    continue
-                # 判断染色体列位置
                 #col[0] = col[0] if col[0].startswith("chr") else "chr" + col[0]
                 #pos = col[0] + ":" + col[1]
                 #beta_dict[pos] = [col[3].upper(), col[4].upper(), float(col[5])]
@@ -113,7 +103,6 @@ def get_beta_value_multi(dir_path):
                 # CP nonCog MDD
                 #if len(col) < 7:
                 #    continue
-                # 判断染色体列位置
                 #col[1] = col[1] if col[1].startswith("chr") else "chr" + col[1]
                 #pos = col[1] + ":" + col[2]
                 #beta_dict[pos] = [col[3].upper(), col[4].upper(), float(col[6])]
@@ -121,7 +110,6 @@ def get_beta_value_multi(dir_path):
                 # Epilepsy
                 #if len(col) < 13:
                 #    continue
-                # 判断染色体列位置
                 #col[0] = col[0] if col[0].startswith("chr") else "chr" + col[0]
                 #pos = col[0] + ":" + col[1]
                 #beta_dict[pos] = [col[3].upper(), col[4].upper(), float(col[11])]
@@ -129,7 +117,6 @@ def get_beta_value_multi(dir_path):
                 # GH
                 #if len(col) < 10:
                 #    continue
-                # 判断染色体列位置
                 #col[0] = col[0] if col[0].startswith("chr") else "chr" + col[0]
                 #pos = col[0] + ":" + col[1]
                 #beta_dict[pos] = [col[3].upper(), col[4].upper(), float(col[9])]
@@ -137,7 +124,6 @@ def get_beta_value_multi(dir_path):
                 # NMR UKB_PPP_cis
                 #if len(col) < 7:
                 #    continue
-                # 判断染色体列位置
                 #col[0] = col[0] if col[0].startswith("chr") else "chr" + col[0]
                 #pos = col[0] + ":" + col[1]
                 #beta_dict[pos] = [col[3].upper(), col[4].upper(), float(col[6])]
@@ -145,7 +131,6 @@ def get_beta_value_multi(dir_path):
                 # PB
                 #if len(col) < 8:
                 #    continue
-                # 判断染色体列位置
                 #col[0] = col[0] if col[0].startswith("chr") else "chr" + col[0]
                 #pos = col[0] + ":" + col[1]
                 #beta_dict[pos] = [col[4].upper(), col[3].upper(), float(col[7])]
@@ -153,7 +138,6 @@ def get_beta_value_multi(dir_path):
                 # SA
                 #if len(col) < 5:
                 #    continue
-                # 判断染色体列位置
                 #col[0] = col[0] if col[0].startswith("chr") else "chr" + col[0]
                 #pos = col[0] + ":" + col[1]
                 #beta_dict[pos] = [col[2].upper(), col[3].upper(), float(col[4])]
@@ -161,7 +145,6 @@ def get_beta_value_multi(dir_path):
                 # SCZ
                 #if len(col) < 9:
                 #    continue
-                # 判断染色体列位置
                 #col[0] = col[0] if col[0].startswith("chr") else "chr" + col[0]
                 #pos = col[0] + ":" + col[2]
                 #beta_dict[pos] = [col[3].upper(), col[4].upper(), float(col[8])]
@@ -188,7 +171,7 @@ def load_fam_data(fname):
 
             col = line.strip().split()
             sid, fid, mid = col[0], col[1], col[2]
-            fam[sid] = [sid, fid, mid] #within-family ID：个体编号，父系编号，母系编号
+            fam[sid] = [sid, fid, mid]
 
     return fam
 
@@ -225,7 +208,7 @@ def load_fam_data(fname):
 #     return h1, h2, h3
 
 
-def paternal_allele_origin_by_duo(sample_gt, parent_gt, is_paternal_gt=False): #确定父本基因型在子代中的遗传方式，默认paternal_gt false，来自母本
+def paternal_allele_origin_by_duo(sample_gt, parent_gt, is_paternal_gt=False): 
     """Determine the paternal allele index in `sample_gt` by parent-offspring duos.
 
     :param sample_gt: The genotype of sample
@@ -234,8 +217,8 @@ def paternal_allele_origin_by_duo(sample_gt, parent_gt, is_paternal_gt=False): #
     :return:
     """
     # Default value
-    is_error_genotype_match = False #是否存在基因型不匹配的情况，默认为false
-    paternal_allele_origin = [0, False]  # [paternal_genotype_index, is_clear_origin] #是否明确父本等位基因的基因来源
+    is_error_genotype_match = False 
+    paternal_allele_origin = [0, False]  # [paternal_genotype_index, is_clear_origin] 
 
     # Genotype should be: ["0", "0"], ["0", "1"], ["1", "0"] or ["1", "1"]
     s_gt = sample_gt.split("|")
@@ -244,10 +227,10 @@ def paternal_allele_origin_by_duo(sample_gt, parent_gt, is_paternal_gt=False): #
     s_gt_sum = sum(map(int, s_gt))  # should be: 0, 1, or 2
     p_gt_sum = sum(map(int, p_gt))  # should be: 0, 1, or 2
 
-    if s_gt_sum == 1 and p_gt_sum == 1: #子代和父本都是杂合
+    if s_gt_sum == 1 and p_gt_sum == 1: 
         return is_error_genotype_match, paternal_allele_origin
 
-    if p_gt_sum == 0 and s_gt_sum == 0:  # MOM/DAD: 0|0, KID: 0|0 #条件1和条件2无法区分父本等位基因来源
+    if p_gt_sum == 0 and s_gt_sum == 0:  # MOM/DAD: 0|0, KID: 0|0 
         paternal_allele_origin = [0, False]
 
     elif p_gt_sum == 0 and s_gt_sum == 1:  # MOM/DAD: 0|0, KID: 0|1 or 1|0
@@ -258,7 +241,7 @@ def paternal_allele_origin_by_duo(sample_gt, parent_gt, is_paternal_gt=False): #
             paternal_allele_origin = [0, True] if s_gt[0] == "1" else [1, True]
 
     elif p_gt_sum == 1 and (s_gt_sum == 0 or s_gt_sum == 2):  # MOM/DAD: 0|1 or 1|0, KID: 0|0, 1|1
-        paternal_allele_origin = [0, False] #同样无法区分
+        paternal_allele_origin = [0, False] 
 
     elif p_gt_sum == 2 and s_gt_sum == 1:  # MOM/DAD: 1|1, KID: (0|1 or 1|0)
         if is_paternal_gt:
@@ -272,10 +255,10 @@ def paternal_allele_origin_by_duo(sample_gt, parent_gt, is_paternal_gt=False): #
     else:
         is_error_genotype_match = True  # probably hit error genotype or de novo muation
 
-    return is_error_genotype_match, paternal_allele_origin #duos只有一种情况能区分，就是孩子为杂合，父亲或母亲为纯合
+    return is_error_genotype_match, paternal_allele_origin
 
 
-def paternal_allele_origin_by_trio(sample_gt, father_gt, mother_gt): #trios中判断父本基因和母本基因
+def paternal_allele_origin_by_trio(sample_gt, father_gt, mother_gt): 
     """Determine the paternal allele index in `sample_gt` by parent-offspring duos.
 
     :param sample_gt: The genotype of sample
@@ -295,24 +278,24 @@ def paternal_allele_origin_by_trio(sample_gt, father_gt, mother_gt): #trios中�
     f_gt_sum = sum(map(int, f_gt))  # should be: 0, 1, or 2
     m_gt_sum = sum(map(int, m_gt))  # should be: 0, 1, or 2
 
-    if s_gt_sum == 1 and f_gt_sum == 1 and m_gt_sum == 1:  # 0|1, 0|1, 0|1 #父亲母亲孩子均为杂合，无法区分
+    if s_gt_sum == 1 and f_gt_sum == 1 and m_gt_sum == 1:  # 0|1, 0|1, 0|1 
         return is_error_genotype_match, paternal_allele_origin
 
-    if s_gt_sum == 0: #孩子为纯合0|0，无法区分
-        if f_gt_sum != 2 or m_gt_sum != 2: #如果父母双方一个人不是纯合2就无法区分
+    if s_gt_sum == 0: 
+        if f_gt_sum != 2 or m_gt_sum != 2: 
             paternal_allele_origin = [0, False]
         else:
-            # DAD: 1|1 or MOM: 1|1 => impossible #如果孩子为0|0，父母中也不可能有一个为1|1，基因型不匹配
+            # DAD: 1|1 or MOM: 1|1 => impossible 
             is_error_genotype_match = True
 
     elif s_gt_sum == 1:  # KID: 0|1 or 1|0
-        if f_gt_sum == 0 and (m_gt_sum == 1 or m_gt_sum == 2):  # DAD: 0|0, MOM: 0|1 or 1|0 or 1|1
+        if f_gt_sum == 0 and (m_gt_sum == 1 or m_gt_sum == 2):  
             paternal_allele_origin = [0, True] if s_gt[0] == "0" else [1, True]
 
         elif f_gt_sum == 1 and m_gt_sum == 0:  # DAD: 0|1 or 1|0, MOM: 0|0
             paternal_allele_origin = [0, True] if s_gt[0] == "1" else [1, True]
 
-        elif f_gt_sum == 1 and m_gt_sum == 1:  # DAD: 0|1 or 1|0, MOM: 0|1 or 1|0 #均为杂合无法区分
+        elif f_gt_sum == 1 and m_gt_sum == 1:  # DAD: 0|1 or 1|0, MOM: 0|1 or 1|0 
             pass  # has returned the default value
 
         elif f_gt_sum == 1 and m_gt_sum == 2:  # DAD: 0|1 or 1|0, MOM: 1|1
@@ -321,38 +304,37 @@ def paternal_allele_origin_by_trio(sample_gt, father_gt, mother_gt): #trios中�
         elif f_gt_sum == 2 and (m_gt_sum == 0 or m_gt_sum == 1):  # DAD: 1|1, MOM: 0|0 or 0|1 or 1|0
             paternal_allele_origin = [0, True] if s_gt[0] == "1" else [1, True]
 
-        else:  # (0|0, 0|0), (1|1, 1|1) #其他情况均不可能发生
+        else:  # (0|0, 0|0), (1|1, 1|1) 
             is_error_genotype_match = True
 
-    else:  # KID: 1|1 #孩子为纯合2时，也无法区分
+    else:  # KID: 1|1 
         if f_gt_sum != 0 and m_gt_sum != 0:  # DAD: 0|1 or 1|1, MOM: 0|1 or 1|1
             paternal_allele_origin = [0, False]
 
         else:  # DAD == 0|0 or MOM == 0|0
-            is_error_genotype_match = True #基因型不匹配
+            is_error_genotype_match = True 
 
     return is_error_genotype_match, paternal_allele_origin
 
 
-def offspring_genotype_origin(data, fam_idx, index2sample):#确定子代基因型的父本等位基因来源
-    ind_format = {name: i for i, name in enumerate(data[0][8].split(":"))} #vcf文件第一行第九列为FORMAT列，使用冒号分割，并对每个key给予索引，从0开始循环
+def offspring_genotype_origin(data, fam_idx, index2sample):
+    ind_format = {name: i for i, name in enumerate(data[0][8].split(":"))} 
     if "GT" not in ind_format:
-        raise ValueError("[ERROR] VCF ERROR: GT is not in FORMAT.") #vcf的format列必须有GT
+        raise ValueError("[ERROR] VCF ERROR: GT is not in FORMAT.") 
 
     paternal_allele_origin = {}  # key value is the array index of child in VCF 存储每个子代父本等位基因的信息，字典的key是子代在vcf的索引
-    for d in data: #每一行vcf进行遍历
-        for c, f, m in fam_idx:  # [KID, DAD, MOM] 三个索引指定的子代、父亲和母亲基因型数据的位置，一行同时存在三人的基因型数据，使用:进行分割
-            child = d[c].split(":") #提取子代基因型数据列表，包含基因型和相关信息的列表
-            father = d[f].split(":") if f is not None else None #提取父亲基因型数据列表（如果存在）
-            mother = d[m].split(":") if m is not None else None #提取母亲基因型数据列表（如果存在）
+    for d in data:
+        for c, f, m in fam_idx:  
+            child = d[c].split(":") 
+            father = d[f].split(":") if f is not None else None 
+            mother = d[m].split(":") if m is not None else None 
 
             if (("." in child[ind_format["GT"]]) or
                     (father and "." in father[ind_format["GT"]]) or
                     (mother and "." in mother[ind_format["GT"]])):
-                # missing call, do nothing 缺失基因型信息，跳过当前个体
                 continue
 
-            if (("/" in child[ind_format["GT"]]) or #phasing过后vcf文件内的基因型会用|表示，/表示没有phasing的基因型
+            if (("/" in child[ind_format["GT"]]) or 
                     (father and "/" in father[ind_format["GT"]]) or
                     (mother and "/" in mother[ind_format["GT"]])):
                 raise ValueError("[ERORR] Unphased sample: %s, %s or %s. Detail: %s" % (
@@ -364,36 +346,34 @@ def offspring_genotype_origin(data, fam_idx, index2sample):#确定子代基因�
                                        d[c]])))
 
             # Genotype should be: "0|0", "0|1", "1|0" or "1|1"
-            child_gt = child[ind_format["GT"]] #从子代基因型数据列表中提取子代基因型
+            child_gt = child[ind_format["GT"]] 
             father_gt = father[ind_format["GT"]] if father else None
             mother_gt = mother[ind_format["GT"]] if mother else None
 
-            if c not in paternal_allele_origin: #c是fam_idx中代表子代的vcf的列索引。在这里检查是否已经为当前子代建立条目，目前还没有确定父本基因型的来源
+            if c not in paternal_allele_origin: 
                 # Key value is the index of child in VCF line. [genotype_index, is_clear_origin]
                 is_error_genotype_match, paternal_allele_origin[c] = False, [None, False]
 
             if paternal_allele_origin[c][1]:
-                # the parent-of-origin of child's GT is already set, do nothing for this individual 第二个位置为TRUE，已经确定父本基因来源
                 continue
 
-            if father_gt is None or mother_gt is None: #当没有父本或者母本的基因型
-                if mother_gt: #母亲基因型存在
+            if father_gt is None or mother_gt is None: 
+                if mother_gt: 
                     # maternal-child pair
                     is_error_genotype_match, paternal_allele_origin[c] = paternal_allele_origin_by_duo(
                         child_gt, mother_gt, is_paternal_gt=False)
-                elif father_gt:#同上，一个参数改变
+                elif father_gt:
                     # paternal-child pair
                     is_error_genotype_match, paternal_allele_origin[c] = paternal_allele_origin_by_duo(
                         child_gt, father_gt, is_paternal_gt=True)
-                else: #如果父亲母亲基因型都没有
+                else: 
                     # Single individual
-                    is_error_genotype_match, paternal_allele_origin[c] = False, [0, False] #无法确定
+                    is_error_genotype_match, paternal_allele_origin[c] = False, [0, False] 
             else:
-                # Trio #三人基因型都有
                 is_error_genotype_match, paternal_allele_origin[c] = paternal_allele_origin_by_trio(
                     child_gt, father_gt, mother_gt)
 
-            if is_error_genotype_match: #如果基因型匹配错误，将父亲等位基因来源设置为第一个基因（索引为0），并标记来源不清楚
+            if is_error_genotype_match: 
                 paternal_allele_origin[c] = [0, False]
                 sys.stderr.write("[WARNING] Genotype match failed but still set original and "
                                  "continue: %s \t(father: %s, %s), (mother: %s, %s) and "
@@ -404,28 +384,28 @@ def offspring_genotype_origin(data, fam_idx, index2sample):#确定子代基因�
                                      index2sample[m] if m is not None else "-",
                                      d[m] if m is not None else "-",
                                      index2sample[c],
-                                     d[c]))#虽然基因型不匹配，但是程序仍然可以运行，输出信息便于使用者查明那个个体的基因型匹配失败
+                                     d[c]))
     return paternal_allele_origin
 
 
-def output_origin_phased(data, paternal_allele_origin):#根据之前确定的父本等位基因来源信息，将VCF数据中每个个体的基因型信息调整为“Paternal|Maternal”的形式，然后将调整后的行数据打印出来
+def output_origin_phased(data, paternal_allele_origin):
     ind_format = {name: i for i, name in enumerate(data[0][8].split(":"))}
     for d in data:
-        for k, c in paternal_allele_origin.items():#遍历每一个父本等位基因来源字典中的键值对
-            ind_info = d[k].split(":")  # 0|0:0:1,0,0 提取当前个体的基因型信息
+        for k, c in paternal_allele_origin.items():
+            ind_info = d[k].split(":")  
             if "." in ind_info[ind_format["GT"]]:  # Missing call, do nothing
                 continue
 
             try:
                 # adjust the GT to be "Paternal|Maternal"
                 gt = ind_info[ind_format["GT"]].split("|")
-                ind_info[ind_format["GT"]] = "|".join([gt[c[0]], gt[1 - c[0]]]) #根据c将基因型信息调整为"Paternal|Maternal"
-                d[k] = ":".join(ind_info) #更新vcf数据中当前个体的信息
+                ind_info[ind_format["GT"]] = "|".join([gt[c[0]], gt[1 - c[0]]]) 
+                d[k] = ":".join(ind_info) 
             except IndexError as e:
                 raise ValueError("[ERROR] IndexError: %s\n\n[Target] %s\n[ALL] %s" %
                                  (e, d[k], "\t".join(d)))
 
-        print("%s" % "\t".join(d))#打印调整后的vcf行的数据
+        print("%s" % "\t".join(d))
 
     return
 
@@ -447,28 +427,28 @@ def determine_variant_parent_origin(in_vcf_fn, fam, window=10000):
     :param window: The size of phasing block in Beagle.
     :return:
     """
-    sample2index, index2sample = {}, {} #将样本名和索引相互映射
-    fam_idx = [] #三个成员vcf列索引
+    sample2index, index2sample = {}, {} 
+    fam_idx = [] 
     n = 0
     data_buffer = []
-    prewindow = {} #追踪窗口的起始位置
-    with gzip.open(in_vcf_fn, "rt") if in_vcf_fn.endswith(".gz") else open(in_vcf_fn, "rt") as IN: #打开vcf文件
+    prewindow = {} 
+    with gzip.open(in_vcf_fn, "rt") if in_vcf_fn.endswith(".gz") else open(in_vcf_fn, "rt") as IN: 
         # VCF file
-        for line in IN: #遍历
-            if line.startswith("##"): #从头部信息开始
+        for line in IN: 
+            if line.startswith("##"): 
                 print(line.strip())
                 continue
 
-            col = line.strip().split() #删除首尾空格，并按照空格分割
-            if line.startswith("#CHROM"): #header行
+            col = line.strip().split() 
+            if line.startswith("#CHROM"): 
                 print(line.strip())
-                for i in range(9, len(col)):  # load sample ID and the index of sample 9开始是sample
+                for i in range(9, len(col)):  
                     sample2index[col[i]] = i #sample1:9
                     index2sample[i] = col[i] #9：sample1
 
                 for i in range(9, len(col)):
                     sample_id = col[i]
-                    if sample_id in fam: #检查样本id是否在fam文件内
+                    if sample_id in fam: 
                         sid, fid, mid = fam[sample_id]
                         if (fid != "0" and fid not in sample2index) or (mid != "0" and mid not in sample2index):
                             raise ValueError("[ERROR] %s or %s not in VCF" % (fid, mid))
@@ -476,7 +456,7 @@ def determine_variant_parent_origin(in_vcf_fn, fam, window=10000):
                         fam_idx.append([sample2index[sid],
                                         sample2index[fid] if fid != "0" else None,
                                         sample2index[mid] if mid != "0" else None])
-                continue #孩子 父亲 母亲都添加了sample id
+                continue 
 
             n += 1
             if n % 100000 == 0:
@@ -547,7 +527,7 @@ def distinguish_origin(in_vcf_fn, fam, is_dosage=False):
             #CHROM  POS     ID      REF     ALT
             chr7   44184122    rs730497        G       A
             """
-            snp = col[2] if col[2] != "." else "-".join([col[0], col[1], col[3], col[4]]) #SNP格式为rsid或者chr-bp-ref-alt
+            snp = col[2] if col[2] != "." else "-".join([col[0], col[1], col[3], col[4]]) 
 
             if "," in col[4]:  # ignore multi-allelic
                 continue
@@ -651,7 +631,7 @@ def distinguish_origin(in_vcf_fn, fam, is_dosage=False):
             record.append(str(p[7]))
         print("%s" % "\t".join(record))
 
-    return #h1、h2和h3表示的为等位基因或者剂量
+    return 
 
 
 def calculate_genotype_and_haplotype_score_multi(in_vcf_fn, traits_beta_values, fam, outdir, score_model, is_dosage=False):
@@ -671,7 +651,7 @@ def calculate_genotype_and_haplotype_score_multi(in_vcf_fn, traits_beta_values, 
                     sample2index[col[i]] = i
                     index2sample[i] = col[i]
 
-                for i in range(9, len(col)): #母亲和孩子的索引信息
+                for i in range(9, len(col)): 
                     sample_id = col[i]
                     if sample_id in fam:
                         sid, fid, mid = fam[sample_id]
@@ -844,7 +824,7 @@ def calculate_genotype_and_haplotype_score(in_vcf_fn, pos_beta_value, fam, score
                     sample2index[col[i]] = i
                     index2sample[i] = col[i]
 
-                for i in range(9, len(col)): #母亲和孩子的索引信息
+                for i in range(9, len(col)): 
                     sample_id = col[i]
                     if sample_id in fam:
                         sid, fid, mid = fam[sample_id]
@@ -891,7 +871,7 @@ def calculate_genotype_and_haplotype_score(in_vcf_fn, pos_beta_value, fam, score
                 continue
 
             if ref_allele == a1:
-                beta = -1.0 * beta #调整beta为effect allele的beta
+                beta = -1.0 * beta 
 
             # info = {c.split("=")[0]: c.split("=")[-1] for c in col[7].split(";") if "=" in c}
             # af = float(info["AF"])  # ALT allele frequency
@@ -1119,7 +1099,7 @@ def calculate_genotype_score(in_vcf_fn, pos_beta_value, score_model, is_dosage=F
     return
 
 
-def phenotype_concat(in_gs_fn, in_pheno_file): #合并同一个样本ID的表型文件和genetic score文件
+def phenotype_concat(in_gs_fn, in_pheno_file): 
     gs_data = {}
     header = []
     with open(in_gs_fn, "rt") as I:
@@ -1159,49 +1139,36 @@ def phenotype_concat(in_gs_fn, in_pheno_file): #合并同一个样本ID的表型
 
 
 def intergenerationalMR_regression(data, y_name, x_names, covar_names=""):
-    """
-    自动选择 OLS / Logistic / Multinomial Logistic 模型；
-    h1-4回归前标准化，计算MY、FY，t统计量和t分布计算P值，logit模型增加OR
-    """
     d = x_names.strip().split(",")
     c = covar_names.strip().split(",") if covar_names.strip() else []
-    X = data[d + c].copy()  # 添加协变量
+    X = data[d + c].copy()  
     y = data[y_name]
 
-    # 标准化
     for col in X.columns:
-        # 数值型且唯一值数量 > 2（排除二分类0/1变量），只对连续变量标准化
         if pd.api.types.is_numeric_dtype(X[col]) and X[col].nunique() > 2:
             X[col] = (X[col] - X[col].mean()) / X[col].std()
         else:
-            # 分类变量不变
             X[col] = X[col]
-    X = sm.add_constant(X)  # 添加常数项
+    X = sm.add_constant(X)  
 
-    # 根据 y 值类型自动选择模型
     if pd.api.types.is_numeric_dtype(y):
         unique_y = np.sort(y.unique())
         if len(unique_y) == 2:
-            # 二分类 Logistic 回归
             label_mapping = {unique_y[0]: 0, unique_y[1]: 1}
             y = y.map(label_mapping)
             regression = sm.Logit(y, X)
             model_type = f"Logistic (labels mapped: {unique_y[0]}->0, {unique_y[1]}->1)"
         elif len(unique_y) > 2 and all(y.dropna().astype(int) == y.dropna()):
-            # 多分类 Logistic 回归
             regression = sm.MNLogit(y, X)
             model_type = "Multinomial Logistic"
         else:
-            # 连续型变量 → OLS
             regression = sm.OLS(y, X)
             model_type = "OLS"
     else:
-        raise ValueError("因变量不是数值型，无法处理。")
+        raise ValueError("Not numeric")
 
-    # 模型拟合
     model = regression.fit()
 
-    # 回归结果表
     conf_int = model.conf_int()
     conf_int.columns = ["CI_lower", "CI_upper"]
 
@@ -1217,10 +1184,9 @@ def intergenerationalMR_regression(data, y_name, x_names, covar_names=""):
             3: "Zscore"
         }
     ).sort_values(by=["Pvalue"], inplace=False)
-    # 仅保留h1-4，重新编号
     fe = fe[fe["Feature"].isin(["h1", "h2", "h3", "h4"])].reset_index(drop=True)
 
-    # 计算MY、FY
+    # MY、FY
     m_beta = 0.5 * (float(fe[fe["Feature"] == "h1"].iloc[0]["Coef"]) +
                     float(fe[fe["Feature"] == "h2"].iloc[0]["Coef"]) -
                     float(fe[fe["Feature"] == "h3"].iloc[0]["Coef"]))
@@ -1228,7 +1194,7 @@ def intergenerationalMR_regression(data, y_name, x_names, covar_names=""):
                          float(fe[fe["Feature"] == "h2"].iloc[0]["Stderr"]) ** 2 +
                          float(fe[fe["Feature"] == "h3"].iloc[0]["Stderr"]) ** 2)
     m_t = m_beta / m_se
-    m_p = 2 * (1 - stats.t.cdf(abs(m_t), len(X) - 1))   # t分布
+    m_p = 2 * (1 - stats.t.cdf(abs(m_t), len(X) - 1))   # t
     f_beta = 0.5 * (float(fe[fe["Feature"] == "h1"].iloc[0]["Coef"]) -
                     float(fe[fe["Feature"] == "h2"].iloc[0]["Coef"]) +
                     float(fe[fe["Feature"] == "h3"].iloc[0]["Coef"]))
@@ -1236,14 +1202,14 @@ def intergenerationalMR_regression(data, y_name, x_names, covar_names=""):
                          float(fe[fe["Feature"] == "h2"].iloc[0]["Stderr"]) ** 2 +
                          float(fe[fe["Feature"] == "h3"].iloc[0]["Stderr"]) ** 2)
     f_t = f_beta / f_se
-    f_p = 2 * (1 - stats.t.cdf(abs(f_t), len(X) - 1))   # t分布
+    f_p = 2 * (1 - stats.t.cdf(abs(f_t), len(X) - 1))   # t
     fe = pd.concat([
         fe,
         pd.DataFrame([{"Feature": "MY", "Coef": m_beta, "Stderr": m_se, "Pvalue": m_p, "Zscore": m_t, "CI_lower": m_beta - 1.96*m_se, "CI_upper": m_beta + 1.96*m_se}]),
         pd.DataFrame([{"Feature": "FY", "Coef": f_beta, "Stderr": f_se, "Pvalue": f_p, "Zscore": f_t, "CI_lower": f_beta - 1.96*f_se, "CI_upper": f_beta + 1.96*f_se}])
     ], ignore_index=True)
 
-    # OR与置信区间
+    # OR
     if model_type.startswith("Logistic"):
         fe["OR"] = np.exp(fe["Coef"])
         fe["OR_CI_lower"] = np.exp(fe["Coef"] - 1.96 * fe["Stderr"])
@@ -1261,50 +1227,39 @@ def intergenerationalMR_regression(data, y_name, x_names, covar_names=""):
 def genotype_asd_regression(data, y_name, x_names, covar_names=""):
     d = x_names.strip().split(",")
     c = covar_names.strip().split(",") if covar_names.strip() else []
-    X = data[d + c].copy()  # 添加协变量
+    X = data[d + c].copy()  
     y = data[y_name]
 
-    # 标准化
     for col in X.columns:
-        # 数值型且唯一值数量 > 2（排除二分类0/1变量），只对连续变量标准化
         if pd.api.types.is_numeric_dtype(X[col]) and X[col].nunique() > 2:
             X[col] = (X[col] - X[col].mean()) / X[col].std()
         else:
-            # 分类变量不变
             X[col] = X[col]
-    X = sm.add_constant(X)  # 添加常数项
+    X = sm.add_constant(X)
 
-    # 根据 y 值类型自动选择模型
     if pd.api.types.is_numeric_dtype(y):
         unique_y = np.sort(y.unique())
         if len(unique_y) == 2:
-            # 二分类 Logistic 回归
             label_mapping = {unique_y[0]: 0, unique_y[1]: 1}
             y = y.map(label_mapping)
             regression = sm.Logit(y, X)
             model_type = f"Logistic (labels mapped: {unique_y[0]}->0, {unique_y[1]}->1)"
         elif len(unique_y) > 2 and all(y.dropna().astype(int) == y.dropna()):
-            # 多分类 Logistic 回归
             regression = sm.MNLogit(y, X)
             model_type = "Multinomial Logistic"
         else:
-            # 连续型变量 → OLS
             regression = sm.OLS(y, X)
             model_type = "OLS"
     else:
-        raise ValueError("因变量不是数值型，无法处理。")
+        raise ValueError("Not numeric")
 
-    # 模型拟合
     model = regression.fit()
 
-    # 回归结果表
     conf_int = model.conf_int()
     conf_int.columns = ["CI_lower", "CI_upper"]
     fe = pd.concat([model.params, model.bse, model.pvalues, model.tvalues, conf_int], axis=1).reset_index().rename(columns={"index": "Feature", 0: "Coef", 1: "Stderr", 2: "Pvalue", 3: "Zscore"}).sort_values(by=["Pvalue"], inplace=False)
-    # 仅保留paternal、maternal、fetal genotype score
     fe = fe[fe["Feature"].isin(["child_genotype_score", "father_genotype_score", "maternal_genotype_score"])].reset_index(drop=True)
 
-    # OR及其置信区间
     if model_type.startswith("Logistic"):
         fe["OR"] = np.exp(fe["Coef"])
         fe["OR_CI_lower"] = np.exp(fe["Coef"] - 1.96 * fe["Stderr"])
@@ -1388,14 +1343,12 @@ if __name__ == "__main__":
 
     args = cmd_parser.parse_args()
     if args.command == "TTC":
-        fam_data = load_fam_data(args.fam) #fam需要是plink的fam格式
+        fam_data = load_fam_data(args.fam) 
         determine_variant_parent_origin(args.target, fam_data, window=args.window)
-        #将VCF数据中每个个体的基因型信息调整为“Paternal|Maternal”的形式（可以同时处理trio和duo），将调整后的行数据打印出来，需要加>.vcf
 
     elif args.command == "Split":
         fam_data = load_fam_data(args.fam)
         distinguish_origin(args.target, fam_data, is_dosage=args.dosage)
-        #输出以家系为行，snp GT基因型和hap基因型为列的表格，需要加>.txt [child, father, mother, snp1_fet, snp1_fat, snp1_mat, snp1_h1, snp1_h2, snp1_h3]
 
     elif args.command == "GeneticScore":
 
@@ -1406,7 +1359,6 @@ if __name__ == "__main__":
             fam_data = load_fam_data(args.fam)
             beta_value = get_beta_value(args.base)
             calculate_genotype_and_haplotype_score(args.target, beta_value, fam_data, score_model=args.sm, is_dosage=args.dosage)
-            #输出以家系为行，GT PRS和hap PRS为列的表格，需要加>.txt [child, father, mother, prs_fet, prs_fat, prs_mat, prs_h1, prs_h2, prs_h3, prs_h4, num]
         else:
             beta_value = get_beta_value(args.base)
             calculate_genotype_score(args.target, beta_value, score_model=args.sm, is_dosage=args.dosage)
@@ -1437,3 +1389,4 @@ if __name__ == "__main__":
 
     elapsed_time = datetime.now() - START_TIME
     sys.stderr.write("\n** process done, %d seconds elapsed **\n" % elapsed_time.seconds)
+
