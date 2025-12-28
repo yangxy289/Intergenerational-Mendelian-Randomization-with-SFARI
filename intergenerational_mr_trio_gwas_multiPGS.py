@@ -17,42 +17,6 @@ import os
 
 START_TIME = datetime.now()
 
-
-def get_beta_value(fname):
-    beta = {}
-    with gzip.open(fname, "rt") if fname.endswith(".gz") else open(fname, "rt") as IN:
-        """
-        snp	chr	pos	A	B	beta	se	pval	freq	REF	ALT
-        rs340874	chr1	213985913	C	T	0.0174	0.0032	6.80E-08	0.5175	T	C
-        rs1371614	chr2	26930006	T	C	0.0191	0.0045	2.36E-05	0.2513	C	T
-        rs780094	chr2	27518370	C	T	0.0325	0.0032	3.30E-24	0.6044	NA	NA
-        rs560887	chr2	168906638	C	T	0.0731	0.0034	4.68E-100	0.7019	T	C
-        """
-        for line in IN: 
-            #if line.startswith("snp") or line.startswith("SNP"):
-            if line.startswith("rsID") or line.startswith("#"):
-                continue
-
-            col = line.strip().split() 
-
-            if len(col) < 8: 
-                continue
-
-            #col[1] = col[1] if col[1].startswith("chr") else "chr" + col[1] 
-            #pos = col[1] + ":" + col[2] 
-            if len(col) == 9:
-                col[7] = col[7] if col[7].startswith("chr") else "chr" + col[7]
-                pos = col[7] + ":" + col[8]
-            else:
-                col[8] = col[8] if col[8].startswith("chr") else "chr" + col[8]
-                pos = col[8] + ":" + col[9]
-
-            # [Effect allele, non-Effect allele, GWAS beta value]
-            beta[pos] = [col[3].upper(), col[4].upper(), float(col[5])] #{'chr1:123':['C','T',0.0174]}
-
-    return beta 
-
-
 def get_beta_value_multi(dir_path):
     traits_beta_values = {}
 
@@ -74,80 +38,12 @@ def get_beta_value_multi(dir_path):
                     continue
 
                 col = line.strip().split()
-                # OmicsPred_hm_GRCh38 olink somascan nightingale metabolon ukb_eur ukb_multi
-                #if len(col) < 8:
-                #    continue
-                #if len(col) == 9:
-                #    col[7] = col[7] if col[7].startswith("chr") else "chr" + col[7]
-                #    pos = col[7] + ":" + col[8]
-                #else:
-                #    col[8] = col[8] if col[8].startswith("chr") else "chr" + col[8]
-                #    pos = col[8] + ":" + col[9]
-                #beta_dict[pos] = [col[3].upper(), col[4].upper(), float(col[5])]
 
-                # OmicsPred olink somascan nightingale metabolon
-                # ADHD BD EA OCD NDC PTSD smoking_alcohol TS
                 if len(col) < 6:
                     continue
                 col[1] = col[1] if col[1].startswith("chr") else "chr" + col[1]
                 pos = col[1] + ":" + col[2]
                 beta_dict[pos] = [col[3].upper(), col[4].upper(), float(col[5])]
-
-                # AN
-                #if len(col) < 6:
-                #    continue
-                #col[0] = col[0] if col[0].startswith("chr") else "chr" + col[0]
-                #pos = col[0] + ":" + col[1]
-                #beta_dict[pos] = [col[3].upper(), col[4].upper(), float(col[5])]
-
-                # CP nonCog MDD
-                #if len(col) < 7:
-                #    continue
-                #col[1] = col[1] if col[1].startswith("chr") else "chr" + col[1]
-                #pos = col[1] + ":" + col[2]
-                #beta_dict[pos] = [col[3].upper(), col[4].upper(), float(col[6])]
-
-                # Epilepsy
-                #if len(col) < 13:
-                #    continue
-                #col[0] = col[0] if col[0].startswith("chr") else "chr" + col[0]
-                #pos = col[0] + ":" + col[1]
-                #beta_dict[pos] = [col[3].upper(), col[4].upper(), float(col[11])]
-
-                # GH
-                #if len(col) < 10:
-                #    continue
-                #col[0] = col[0] if col[0].startswith("chr") else "chr" + col[0]
-                #pos = col[0] + ":" + col[1]
-                #beta_dict[pos] = [col[3].upper(), col[4].upper(), float(col[9])]
-
-                # NMR UKB_PPP_cis
-                #if len(col) < 7:
-                #    continue
-                #col[0] = col[0] if col[0].startswith("chr") else "chr" + col[0]
-                #pos = col[0] + ":" + col[1]
-                #beta_dict[pos] = [col[3].upper(), col[4].upper(), float(col[6])]
-
-                # PB
-                #if len(col) < 8:
-                #    continue
-                #col[0] = col[0] if col[0].startswith("chr") else "chr" + col[0]
-                #pos = col[0] + ":" + col[1]
-                #beta_dict[pos] = [col[4].upper(), col[3].upper(), float(col[7])]
-
-                # SA
-                #if len(col) < 5:
-                #    continue
-                #col[0] = col[0] if col[0].startswith("chr") else "chr" + col[0]
-                #pos = col[0] + ":" + col[1]
-                #beta_dict[pos] = [col[2].upper(), col[3].upper(), float(col[4])]
-
-                # SCZ
-                #if len(col) < 9:
-                #    continue
-                #col[0] = col[0] if col[0].startswith("chr") else "chr" + col[0]
-                #pos = col[0] + ":" + col[2]
-                #beta_dict[pos] = [col[3].upper(), col[4].upper(), float(col[8])]
 
         traits_beta_values[trait_name] = beta_dict
         sys.stderr.write("[INFO] Loaded %d variants for trait: %s \n" % (len(beta_dict), trait_name))
@@ -159,12 +55,6 @@ def get_beta_value_multi(dir_path):
 def load_fam_data(fname):
     fam = {}
     with gzip.open(fname, "rt") if fname.endswith(".gz") else open(fname, "rt") as IN:
-        """
-        #Family IID FID MID Sex Phenotype 
-        6596178	16101233BFF2	0	0	2	-9
-        4459907	17200664BFF2	0	00116101038M15BFF2	1	-9
-        2052894 16100773BFF2    00115111159F00BFF2      00115111159M22BFF2      2       -9
-        """
         for line in IN:
             if line.startswith("#"):
                 continue
@@ -174,38 +64,6 @@ def load_fam_data(fname):
             fam[sid] = [sid, fid, mid]
 
     return fam
-
-
-# def distinguish_allele(maternal_GT, child_GT):
-#     if (sum(maternal_GT) == 2 and sum(child_GT) == 0) or (sum(maternal_GT) == 0 and sum(child_GT) == 2):
-#         # Mendelian error
-#         return None, None, None
-#
-#     # 0,1 => 0,1
-#     if (sum(maternal_GT) == 1) and (sum(child_GT) == 1):
-#         # can not distinguish the maternal allele
-#         return None, None, None
-#
-#     if sum(maternal_GT) == 0:
-#         h1, h2 = 0, 0
-#         h3 = 0 if sum(child_GT) == 0 else 1
-#
-#     elif sum(maternal_GT) == 1:  # 01 or 10
-#         if sum(child_GT) == 0:  # could only be 0 or 2
-#             h1, h2, h3 = 0, 1, 0
-#         elif sum(child_GT) == 2:
-#             h1, h2, h3 = 1, 0, 1
-#         else:
-#             raise ValueError("[ERROR] Child Genotype error.")
-#
-#     elif sum(maternal_GT) == 2:
-#         h1, h2 = 1, 1
-#         h3 = sum(child_GT) - h2  # child_GT) could only be [0,1]/[1,0] or [1,1]
-#
-#     else:
-#         raise ValueError("[ERROR] Maternal genotype error!")
-#
-#     return h1, h2, h3
 
 
 def paternal_allele_origin_by_duo(sample_gt, parent_gt, is_paternal_gt=False): 
@@ -491,149 +349,6 @@ def determine_variant_parent_origin(in_vcf_fn, fam, window=10000):
     return
 
 
-def distinguish_origin(in_vcf_fn, fam, is_dosage=False):
-    sample2index, index2sample = {}, {}
-    child_father_mother_idx = []
-    data = {}
-    with gzip.open(in_vcf_fn, "rt") if in_vcf_fn.endswith(".gz") else open(in_vcf_fn, "rt") as IN:
-        # VCF file
-        for line in IN:
-            if line.startswith("##"):
-                continue
-
-            col = line.strip().split()
-            if line.startswith("#CHROM"):
-                for i in range(9, len(col)):  # load sample ID and the index of sample
-                    sample2index[col[i]] = i
-                    index2sample[i] = col[i]
-
-                for i in range(9, len(col)):
-                    sample_id = col[i]
-                    if sample_id in fam:
-                        sid, fid, mid = fam[sample_id]
-                        if (sid not in sample2index) or (fid not in sample2index) or (mid not in sample2index):
-                            raise ValueError("[ERROR] %s or %s or %s not in VCF" % (sid, fid, mid))
-                        if fid == "0" and mid == "0": continue
-                        elif fid != "0" and mid == "0":
-                            child_father_mother_idx.append([sample2index[sid], sample2index[fid], "0"])
-                        elif fid == "0" and mid != "0":
-                            child_father_mother_idx.append([sample2index[sid], "0", sample2index[mid]])
-                        else:
-                            child_father_mother_idx.append([sample2index[sid], sample2index[fid], sample2index[mid]])
-
-                continue
-
-            """
-            #CHROM  POS     ID      REF     ALT
-            chr7   44184122    rs730497        G       A
-            """
-            snp = col[2] if col[2] != "." else "-".join([col[0], col[1], col[3], col[4]]) 
-
-            if "," in col[4]:  # ignore multi-allelic
-                continue
-
-            ind_format = {name: i for i, name in enumerate(col[8].split(":"))}
-            if "GT" not in ind_format:
-                raise ValueError("[ERROR] 'GT' filed is required in VCF for each individual.")
-
-            if is_dosage and ("GP" not in ind_format) and ("DS" not in ind_format):
-                raise ValueError("[ERROR] 'GP' or 'DS' field is required for dosage "
-                                 "for each individual.")
-
-            for c, f, m in child_father_mother_idx:
-                if f == "0" and m != "0":
-                    k = index2sample[c] + "_0_" + index2sample[m]
-                    if k not in data: data[k] = []
-                    child_gt_str = col[c].split(":")[ind_format["GT"]]
-                    mother_gt_str = col[m].split(":")[ind_format["GT"]]
-                    if ("." in mother_gt_str) or ("." in child_gt_str):
-                        data[k].append([snp, -9, -9, -9, -9, -9, -9, -9])
-                        continue
-                    child_gt = list(map(int, col[c].split(":")[ind_format["GT"]].split("|")))
-                    mother_gt = list(map(int, col[m].split(":")[ind_format["GT"]].split("|")))
-                    fet = sum(child_gt)
-                    fat = 0
-                    mat = sum(mother_gt)
-                    h1 = child_gt[1]
-                    h2 = mother_gt[0] if mother_gt[0] != child_gt[1] else mother_gt[1]
-                    h3 = child_gt[0]
-                    h4 = 0
-                elif f != "0" and m == "0":
-                    k = index2sample[c] + "_" + index2sample[f] + "_0"
-                    if k not in data: data[k] = []
-                    child_gt_str = col[c].split(":")[ind_format["GT"]]
-                    father_gt_str = col[f].split(":")[ind_format["GT"]]
-                    if ("." in father_gt_str) or ("." in child_gt_str):
-                        data[k].append([snp, -9, -9, -9, -9, -9, -9, -9])
-                        continue
-                    child_gt = list(map(int, col[c].split(":")[ind_format["GT"]].split("|")))
-                    father_gt = list(map(int, col[f].split(":")[ind_format["GT"]].split("|")))
-                    fet = sum(child_gt)
-                    fat = sum(father_gt)
-                    mat = 0
-                    h1 = child_gt[1]
-                    h2 = 0
-                    h3 = child_gt[0]
-                    h4 = father_gt[0] if father_gt[0] != child_gt[0] else father_gt[1]
-                else:
-                    k = index2sample[c] + "_" + index2sample[f] + "_" + index2sample[m]
-                    if k not in data: data[k] = []
-                    child_gt_str = col[c].split(":")[ind_format["GT"]]
-                    father_gt_str = col[f].split(":")[ind_format["GT"]]
-                    mother_gt_str = col[m].split(":")[ind_format["GT"]]
-                    if ("." in child_gt_str) or ("." in father_gt_str) or ("." in mother_gt_str):
-                        data[k].append([snp, -9, -9, -9, -9, -9, -9, -9])
-                        continue
-                    child_gt = list(map(int, col[c].split(":")[ind_format["GT"]].split("|")))
-                    father_gt = list(map(int, col[f].split(":")[ind_format["GT"]].split("|")))
-                    mother_gt = list(map(int, col[m].split(":")[ind_format["GT"]].split("|")))
-                    fet = sum(child_gt)
-                    fat = sum(father_gt)
-                    mat = sum(mother_gt)
-                    h1 = child_gt[1]
-                    h2 = mother_gt[0] if mother_gt[0] != child_gt[1] else mother_gt[1]
-                    h3 = child_gt[0]
-                    h4 = father_gt[0] if father_gt[0] != child_gt[0] else father_gt[1]
-                data[k].append([snp, fet, fat, mat, h1, h2, h3, h4])
-
-    is_first_line = True
-    for c, f, m in child_father_mother_idx:
-        if f == "0" and m != "0":
-            k = index2sample[c] + "_0_" + index2sample[m]
-            record = [index2sample[c], "0", index2sample[m]]
-        elif f != "0" and m == "0":
-            k = index2sample[c] + "_" + index2sample[f] + "_0"
-            record = [index2sample[c], index2sample[f], "0"]
-        else:
-            k = index2sample[c] + "_" + index2sample[f] + "_" + index2sample[m]
-            record = [index2sample[c], index2sample[f], index2sample[m]]
-
-        if is_first_line:
-            is_first_line = False
-            header = ["Child", "Father", "Mother"]
-            for p in data[k]:
-                header.append(p[0] + "_child_gt")
-                header.append(p[0] + "_father_gt")
-                header.append(p[0] + "_mother_gt")
-                header.append(p[0] + "_h1")
-                header.append(p[0] + "_h2")
-                header.append(p[0] + "_h3")
-                header.append(p[0] + "_h4")
-            print("%s" % "\t".join(header))
-
-        for p in data[k]:
-            record.append(str(p[1]))
-            record.append(str(p[2]))
-            record.append(str(p[3]))
-            record.append(str(p[4]))
-            record.append(str(p[5]))
-            record.append(str(p[6]))
-            record.append(str(p[7]))
-        print("%s" % "\t".join(record))
-
-    return 
-
-
 def calculate_genotype_and_haplotype_score_multi(in_vcf_fn, traits_beta_values, fam, outdir, score_model, is_dosage=False):
     sample2index, index2sample = {}, {}
     gs = {}  # { sample_key: { trait: [fet_sum, fat_sum, mat_sum, h1_sum, h2_sum, h3_sum, h4_sum, count] } }
@@ -804,297 +519,6 @@ def calculate_genotype_and_haplotype_score_multi(in_vcf_fn, traits_beta_values, 
                 f.write(f"{child}\t{father}\t{mother}\t{score_str}\t{values[7]}\n")
 
         sys.stderr.write("[INFO] Trait %s results saved to %s \n" % (trait, outfile))
-
-    return
-
-def calculate_genotype_and_haplotype_score(in_vcf_fn, pos_beta_value, fam, score_model, is_dosage=False):
-    sample2index, index2sample = {}, {}
-    gs = {}
-    child_father_mother_idx = []
-    n = 0
-    with gzip.open(in_vcf_fn, "rt") if in_vcf_fn.endswith(".gz") else open(in_vcf_fn, "rt") as IN:
-        # VCF file
-        for line in IN:
-            if line.startswith("##"):
-                continue
-
-            col = line.strip().split()
-            if line.startswith("#CHROM"):
-                for i in range(9, len(col)):  # load sample ID and the index of sample
-                    sample2index[col[i]] = i
-                    index2sample[i] = col[i]
-
-                for i in range(9, len(col)): 
-                    sample_id = col[i]
-                    if sample_id in fam:
-                        sid, fid, mid = fam[sample_id]
-
-                        #if (sid not in sample2index) or (fid not in sample2index) or (mid not in sample2index):
-                        #    raise ValueError("[ERROR] %s or %s or %s not in VCF" % (sid, fid, mid))
-
-                        if mid == "0" and fid == "0":
-                           continue
-                        elif fid != "0" and mid == "0":
-                           child_father_mother_idx.append([sample2index[sid], sample2index[fid], "0"])
-                        elif fid == "0" and mid != "0":
-                           child_father_mother_idx.append([sample2index[sid], "0", sample2index[mid]])
-                        else:
-                           child_father_mother_idx.append([sample2index[sid], sample2index[fid], sample2index[mid]])
-
-                continue
-
-            n += 1
-            if n % 100000 == 0:
-                elapse_time = datetime.now() - START_TIME
-                sys.stderr.write("[INFO] Processing %d records done, %d seconds elapsed\n" % (n, elapse_time.seconds))
-
-            """
-            #CHROM  POS     ID      REF     ALT
-            chr7   44184122    rs730497        G       A
-            """
-            pos = col[0] + ":" + col[1] #chr：bp
-            ref_allele = col[3].upper()
-            alt_allele = col[4].upper()
-
-            if "," in alt_allele:  # ignore multi-allelic
-                continue
-
-            if pos not in pos_beta_value:
-                continue
-
-            # a1 is the effective allele, a2 is the non-effective allele.
-            a1, a2, beta = pos_beta_value[pos]
-            if (a2 != "-") and (ref_allele + alt_allele != a1 + a2) and \
-                    (alt_allele + ref_allele != a1 + a2):
-                sys.stderr.write("[ERROR] Alleles not matched: [%s, %s] != [%s, %s]\n"
-                                 "%s" % (ref_allele, alt_allele, a1, a2, line))
-                continue
-
-            if ref_allele == a1:
-                beta = -1.0 * beta 
-
-            # info = {c.split("=")[0]: c.split("=")[-1] for c in col[7].split(";") if "=" in c}
-            # af = float(info["AF"])  # ALT allele frequency
-
-            ind_format = {name: i for i, name in enumerate(col[8].split(":"))}
-            if "GT" not in ind_format:
-                raise ValueError("[ERROR] 'GT' filed is required in VCF for each individual.")
-
-            if is_dosage and ("GP" not in ind_format) and ("DS" not in ind_format):
-                raise ValueError("[ERROR] 'GP' or 'DS' field is required for dosage "
-                                 "for each individual.")
-
-            for c, f, m in child_father_mother_idx:
-                if f != "0" and m == "0":
-                    father_gt_str = col[f].split(":")[ind_format["GT"]]
-                    child_gt_str = col[c].split(":")[ind_format["GT"]]
-                    if ("." in father_gt_str) or ("." in child_gt_str): continue
-                    father_gt = list(map(int, father_gt_str.split("|")))
-                    child_gt = list(map(int, child_gt_str.split("|")))
-                    if (sum(father_gt) == 0 and sum(child_gt) == 2) or (sum(father_gt) == 2 and sum(child_gt) == 0): continue
-                    fet = sum(child_gt)
-                    fat = sum(father_gt)
-                    mat = 0
-                    h1 = child_gt[1]
-                    h2 = 0
-                    h3 = child_gt[0]
-                    h4 = father_gt[0] if father_gt[0] != child_gt[0] else father_gt[1]
-                    k = index2sample[c] + "_" + index2sample[f] + "_0"
-
-                elif f == "0" and m != "0":
-                    mother_gt_str = col[m].split(":")[ind_format["GT"]]
-                    child_gt_str = col[c].split(":")[ind_format["GT"]]
-                    if ("." in mother_gt_str) or ("." in child_gt_str): continue
-                    mother_gt = list(map(int, mother_gt_str.split("|")))
-                    child_gt = list(map(int, child_gt_str.split("|")))
-                    if (sum(mother_gt) == 0 and sum(child_gt) == 2) or (sum(mother_gt) == 2 and sum(child_gt) == 0): continue
-                    fet = sum(child_gt)
-                    fat = 0
-                    mat = sum(mother_gt)
-                    h1 = child_gt[1]
-                    h2 = mother_gt[0] if mother_gt[0] != child_gt[1] else mother_gt[1]
-                    h3 = child_gt[0]
-                    h4 = 0
-                    k = index2sample[c] + "_0_" + index2sample[m]
-
-                else:
-                    father_gt_str = col[f].split(":")[ind_format["GT"]]
-                    mother_gt_str = col[m].split(":")[ind_format["GT"]]
-                    child_gt_str = col[c].split(":")[ind_format["GT"]]
-                    if ("." in father_gt_str) or ("." in mother_gt_str) or ("." in child_gt_str): continue
-                    father_gt = list(map(int, father_gt_str.split("|")))
-                    mother_gt = list(map(int, mother_gt_str.split("|")))
-                    child_gt = list(map(int, child_gt_str.split("|")))
-                    #if (sum(father_gt) == 0 and sum(child_gt) == 2) or (sum(father_gt) == 2 and sum(child_gt) == 0) or (sum(mother_gt) == 0 and sum(child_gt) == 2) or (sum(mother_gt) == 2 and sum(child_gt) == 0): continue
-                    #if (sum(father_gt) == 0 and sum(child_gt) == 2) or (sum(father_gt) == 2 and sum(child_gt) == 0) or (sum(mother_gt) == 0 and sum(child_gt) == 2) or (sum(mother_gt) == 2 and sum(child_gt) == 0) or (sum(father_gt) == 0 and sum(mother_gt) == 0 and sum(child_gt) == 1) or (sum(father_gt) == 2 and sum(mother_gt) == 2 and sum(child_gt) == 1): continue
-                    if (sum(father_gt) == 0 and sum(child_gt) == 2) or (sum(father_gt) == 2 and sum(child_gt) == 0) or (sum(mother_gt) == 0 and sum(child_gt) == 2) or (sum(mother_gt) == 2 and sum(child_gt) == 0) or (sum(father_gt) == 0 and sum(mother_gt) == 0 and sum(child_gt) == 1) or (sum(father_gt) == 2 and sum(mother_gt) == 2 and sum(child_gt) == 1) or (sum(father_gt) == 1 and sum(mother_gt) == 1 and sum(child_gt) == 1): continue
-                    fet = sum(child_gt)
-                    fat = sum(father_gt)
-                    mat = sum(mother_gt)
-                    h1 = child_gt[1]
-                    h2 = mother_gt[0] if mother_gt[0] != child_gt[1] else mother_gt[1]
-                    h3 = child_gt[0]
-                    h4 = father_gt[0] if father_gt[0] != child_gt[0] else father_gt[1]
-                    k = index2sample[c] + "_" + index2sample[f] + "_" + index2sample[m]
-
-                s_fet = fet * beta
-                s_fat = fat * beta
-                s_mat = mat * beta
-                s_h1 = h1 * beta
-                s_h2 = h2 * beta
-                s_h3 = h3 * beta
-                s_h4 = h4 * beta
-                if k not in gs: gs[k] = [0, 0, 0, 0, 0, 0, 0, 0]
-                gs[k][0] += s_fet
-                gs[k][1] += s_fat
-                gs[k][2] += s_mat
-                gs[k][3] += s_h1
-                gs[k][4] += s_h2
-                gs[k][5] += s_h3
-                gs[k][6] += s_h4
-                gs[k][7] += 1
-
-    elapse_time = datetime.now() - START_TIME
-    sys.stderr.write("[INFO] All %d records loaded, %d seconds elapsed.\n" % (n, elapse_time.seconds))
-
-    if len(gs) == 0:
-        sys.stderr.write("[ERROR] The VCF file does not overlap with your target positions of beta value.")
-        sys.exit(1)
-    else:
-        # Calculate the PRS for each type of allele
-        print("#Child\tFather\tMother\tchild_genotype_score\tfather_genotype_score\tmaternal_genotype_score\th1\th2\th3\th4\tsite_number")
-
-        for c, f, m in child_father_mother_idx:
-            if f == "0" and m != "0":
-                k = index2sample[c] + "_0_" + index2sample[m]
-                fet_sum, fat_sum, mat_sum, h1_sum, h2_sum, h3_sum, h4_sum, number = gs[k]
-                genetic_score = np.array([fet_sum, fat_sum, mat_sum, h1_sum, h2_sum, h3_sum, h4_sum])
-                if score_model == "avg": genetic_score /= number
-                genetic_score_string = "\t".join(map(str, genetic_score))
-                print(f"{index2sample[c]}\t{0}\t{index2sample[m]}\t{genetic_score_string}\t{number}")
-            elif f != "0" and m == "0":
-                k = index2sample[c] + "_" + index2sample[f] + "_0"
-                fet_sum, fat_sum, mat_sum, h1_sum, h2_sum, h3_sum, h4_sum, number = gs[k]
-                genetic_score = np.array([fet_sum, fat_sum, mat_sum, h1_sum, h2_sum, h3_sum, h4_sum])
-                if score_model == "avg": genetic_score /= number
-                genetic_score_string = "\t".join(map(str, genetic_score))
-                print(f"{index2sample[c]}\t{index2sample[f]}\t{0}\t{genetic_score_string}\t{number}")
-            else:
-                k = index2sample[c] + "_" + index2sample[f] + "_" + index2sample[m]
-                fet_sum, fat_sum, mat_sum, h1_sum, h2_sum, h3_sum, h4_sum, number = gs[k]
-                genetic_score = np.array([fet_sum, fat_sum, mat_sum, h1_sum, h2_sum, h3_sum, h4_sum])
-                if score_model == "avg": genetic_score /= number
-                genetic_score_string = "\t".join(map(str, genetic_score))
-                print(f"{index2sample[c]}\t{index2sample[f]}\t{index2sample[m]}\t{genetic_score_string}\t{number}")
-
-    return
-
-
-def calculate_genotype_score(in_vcf_fn, pos_beta_value, score_model, is_dosage=False):
-    """Calculate the Genetic score (or call PRS) for individuals in VCF"""
-    samples = []
-    sample2index, index2sample = {}, {}
-    gs, af_beta = {}, {}
-    n = 0
-
-    is_empty = True
-    with gzip.open(in_vcf_fn, "rt") if in_vcf_fn.endswith(".gz") else open(in_vcf_fn, "rt") as IN:
-        # VCF file
-        for line in IN:
-            if line.startswith("##"):
-                continue
-
-            col = line.strip().split()
-            if line.startswith("#CHROM"):
-                for i in range(9, len(col)):  # load sample ID and the index of sample
-                    sample2index[col[i]] = i
-                    index2sample[i] = col[i]
-                    samples.append(col[i])
-                continue
-
-            n += 1
-            if n % 100000 == 0:
-                elapse_time = datetime.now() - START_TIME
-                sys.stderr.write("[INFO] Processing %d records done, "
-                                 "%d seconds elapsed\n" % (n, elapse_time.seconds))
-
-            """
-            #CHROM  POS     ID      REF     ALT
-            chr7   44184122    rs730497        G       A
-            """
-            pos = col[0] + ":" + col[1]
-            ref_allele = col[3].upper()
-            alt_allele = col[4].upper()
-
-            if "," in alt_allele:  # ignore multi-allelic
-                continue
-
-            if pos not in pos_beta_value:
-                continue
-
-            # a1 is the effective allele, a2 is the non-effective allele.
-            a1, a2, beta = pos_beta_value[pos]
-            if (ref_allele + alt_allele != a1 + a2) and (alt_allele + ref_allele != a1 + a2):
-                sys.stderr.write("[WARNING] Alleles not matched on %s: "
-                                 "[%s, %s] != [%s, %s]" % (pos, ref_allele, alt_allele, a1, a2))
-                continue
-
-            if ref_allele == a1:
-                beta = -1.0 * beta
-
-            ind_format = {name: i for i, name in enumerate(col[8].split(":"))}
-            if "GT" not in ind_format:
-                raise ValueError("[ERROR] 'GT' filed is required in VCF for each individual.")
-
-            if is_dosage and ("GP" not in ind_format) and ("DS" not in ind_format):
-                raise ValueError("[ERROR] 'GP' or 'DS' field is required for dosage "
-                                 "for each individual.")
-
-            for i in range(9, len(col)):
-                # Genotype should be: [0, 0], [0, 1], [1, 0] or [1, 1]
-                gt_str = col[i].split(":")[ind_format["GT"]]
-                if "." in gt_str:
-                    # missing call, do nothing
-                    continue
-
-                gt = list(map(int, gt_str.replace("/", "|").split("|")))
-                if is_dosage:
-                    # Should be the probability of genotype: [0.99, 0.01, 0.00] for [Hom_Ref, Het_Var, Hom_Var]
-                    if "DS" in ind_format:
-                        g = float(col[i].split(":")[ind_format["DS"]])
-
-                    else:  # GP in ind_format
-                        gp = list(map(float, col[i].split(":")[ind_format["GP"]].split(",")))
-                        g = gp[1] + 2 * gp[2]
-
-                else:
-                    g = sum(gt)
-
-                g_score = g * beta
-                k = index2sample[i]
-
-                if k not in gs:
-                    gs[k] = [0, 0]
-
-                gs[k][0] += g_score  # sum the score for all position
-                gs[k][1] += 1  # record the number of variants
-
-    elapse_time = datetime.now() - START_TIME
-    sys.stderr.write("[INFO] All %d records loaded, %d seconds elapsed.\n" % (n, elapse_time.seconds))
-
-    if len(gs) == 0:
-        sys.stderr.write("[ERROR] The VCF file does not overlap with your target position of beta value.")
-        sys.exit(1)
-    else:
-        # Calculate the PRS for each type of allele
-        print("#SampleID\tgenotype_score\tsite_number")
-        for sample in samples:
-            if score_model == "avg":
-                genetic_score = gs[sample][0] / gs[sample][1]  # PRS in average model
-            else:
-                genetic_score = gs[sample][0]  # PRS in sum model
-
-            print(f"{sample}\t{genetic_score}\t{gs[sample][1]}")
 
     return
 
@@ -1288,27 +712,6 @@ if __name__ == "__main__":
     tc_cmd.add_argument("--fam", dest="fam", type=str, required=True,
                         help="Input a .fam file with mother and children.")
 
-    ss_cmd = commands.add_parser("Split", help="Distinguish the parental origin of individual genotype "
-                                               "according to the parent_origin VCF (by ``TTC``).")
-    ss_cmd.add_argument("-I", "--target", dest="target", type=str, required=True,
-                        help="Input a phased VCF. Required.")
-    ss_cmd.add_argument("--fam", dest="fam", type=str, required=True,
-                        help="Input a .fam file with mother and children.")
-    ss_cmd.add_argument("--dosage", dest="dosage", action="store_true", help="Use dosage.")
-
-    gs_cmd = commands.add_parser("GeneticScore", help="Calculate Genetic score.")
-    gs_cmd.add_argument("-I", "--target", dest="target", type=str, required=True,
-                        help="Input VCF. Required.")
-    gs_cmd.add_argument("-b", "--base", dest="base", type=str, required=True,
-                        help="A POS file with beta value for each position")
-    gs_cmd.add_argument("--fam", dest="fam", type=str, required=False,
-                        help="Input a .fam file [option]. If provide .fam file, this module will only "
-                             "calculate the genetic score for mother-child pairs according to the "
-                             "parent_origin VCF, which create by 'TTC' module.")
-    gs_cmd.add_argument("--score-model", dest="sm", type=str, default="avg", required=False,
-                        help="The model for calculating genetic score [avg, sum]. Default: avg.")
-    gs_cmd.add_argument("--dosage", dest="dosage", action="store_true", help="Use dosage.")
-
     gs_cmd = commands.add_parser("GeneticScore_multiphenotype", help="Calculate multiple genotypes Genetic score.")
     gs_cmd.add_argument("-I", "--target", dest="target", type=str, required=True,
                         help="Input VCF. Required.")
@@ -1329,11 +732,9 @@ if __name__ == "__main__":
                         help="Input data file")
     mr_cmd.add_argument("-x", dest="x_name", type=str, required=True,
                         help="Load the designated phenotype(s) as x from the '--input'.")
-    # mr_cmd.add_argument("--covar", dest="covar_name", type=str, required=True,
-    #                    help="Only load the designated covariate(s) from the '--input'.")
-
-    mr_cmd.add_argument("--covar", dest="covar_name", type=str, required=False, default="", help="Only load the designated covariate(s) from the '--input'. If not set, no covariates will be used.")
-
+    mr_cmd.add_argument("--covar", dest="covar_name", type=str, required=False, default="", 
+                        help="Only load the designated covariate(s) from the '--input'. "
+                        "If not set, no covariates will be used.")
     mr_cmd.add_argument("-y", dest="y_name", type=str, required=True,
                         help="Load the designated data as y from the '--input'.")
 
@@ -1345,23 +746,6 @@ if __name__ == "__main__":
     if args.command == "TTC":
         fam_data = load_fam_data(args.fam) 
         determine_variant_parent_origin(args.target, fam_data, window=args.window)
-
-    elif args.command == "Split":
-        fam_data = load_fam_data(args.fam)
-        distinguish_origin(args.target, fam_data, is_dosage=args.dosage)
-
-    elif args.command == "GeneticScore":
-
-        if args.sm not in ["avg", "sum"]:
-            raise ValueError("[ERROR] The value of argument '--score-model' could only be 'avg' or 'sum'.")
-
-        if args.fam:
-            fam_data = load_fam_data(args.fam)
-            beta_value = get_beta_value(args.base)
-            calculate_genotype_and_haplotype_score(args.target, beta_value, fam_data, score_model=args.sm, is_dosage=args.dosage)
-        else:
-            beta_value = get_beta_value(args.base)
-            calculate_genotype_score(args.target, beta_value, score_model=args.sm, is_dosage=args.dosage)
 
     elif args.command == "GeneticScore_multiphenotype":
 
@@ -1389,5 +773,6 @@ if __name__ == "__main__":
 
     elapsed_time = datetime.now() - START_TIME
     sys.stderr.write("\n** process done, %d seconds elapsed **\n" % elapsed_time.seconds)
+
 
 
